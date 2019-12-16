@@ -1,0 +1,17 @@
+{
+  "name": "lang-test",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "bsb -make-world -backend native",
+    "start": "./lib/bs/native/test.native",
+    "clean": "bsb -clean-world -backend native"
+  },
+  "dependencies": {
+    "ocaml-re": "Schmavery/shim#ocaml-re"
+  },
+  "devDependencies": {
+    "bsb-native": "^4.0.7000"
+  }
+}

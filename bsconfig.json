@@ -1,0 +1,29 @@
+{
+  "name": "lang-test",
+  "version": "0.0.1",
+  "sources": [
+    {
+      "dir": "src"
+    },
+    {
+      "dir": "test",
+      "type": "dev"
+    }
+  ],
+  "refmt": 3,
+  "bs-dependencies": ["bsc-stdlib-polyfill", "ocaml-re"],
+  "bsc-flags": [
+    "-open BscStdlibPolyfill"
+  ],
+  "ocaml-flags": [
+    "-open BscStdlibPolyfill"
+  ],
+
+  "warnings": {
+    "error" : "+101"
+  },
+  "entries": [{
+     "backend": "native",
+     "main-module": "Test"
+  }]
+}
