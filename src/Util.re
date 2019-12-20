@@ -1,3 +1,5 @@
+type result('a, 'b) = Result.t('a, 'b) = | Ok('a) | Error('b);
+
 module List = {
   include List;
 
@@ -19,4 +21,13 @@ module List = {
   };
 };
 
-type result('a, 'b) = Result.t('a, 'b) = | Ok('a) | Error('b);
+module Result = {
+  include Result;
+  let bind_error = (r, f) =>
+    switch (r) {
+    | Error(e) => f(e)
+    | Ok(_) as o => o
+    };
+};
+
+let print = (s, v) => print_endline(s(v));

@@ -13,7 +13,7 @@ let lex_one = (t, s, pos) => {
          exec_opt(~pos, re, s) |> Option.map(re => (re, fn))
        )
     |> List.filter(((re, _)) => fst(Group.offset(re, 0)) == pos)
-    |> List.sort(((a, _), (b, _)) => {
+    |> List.stable_sort(((a, _), (b, _)) => {
          let adiff = Group.stop(a, 0) - Group.start(a, 0);
          let bdiff = Group.stop(b, 0) - Group.start(b, 0);
          /* negative to sort longest first (descending) */
@@ -38,7 +38,7 @@ let go = (t, str) => {
       while (pos^ < String.length(str)) {
         let (grp, res_one) = lex_one(t, str, pos^);
         pos := snd(Re.Core.Group.offset(grp, 0));
-        res := [res_one, ...res^];
+        Option.iter(res_one => res := [res_one, ...res^], res_one);
       };
       Result.Ok(List.rev(res^));
     }
@@ -51,10 +51,12 @@ module Test = {
   let fail = (~err="", ()) => {
     print_endline("Test failed (Lexer)" ++ err);
   };
-  let assertEq = (a, b) =>
-    if (a != b) {
+  let assertEq = (a, b, toString) => {
+    let (a, b) = (toString(a), toString(b));
+    if (String.compare(a, b) != 0) {
       fail(~err=": Expected `" ++ b ++ "` got `" ++ a ++ "`", ());
     };
+  };
   type token =
     | Foo
     | Foo2
@@ -71,26 +73,34 @@ module Test = {
     | Whitespace => "ws"
     };
 
-  let lex_pp = l => String.concat(",", List.map(token_pp, l));
-
   let lexer = [
-    ("fooo", _ => Foo2),
-    ("foo", _ => Foo),
-    ("bar", _ => Bar),
-    ("  ", _ => Whitespace),
-    (".", _ => Any),
+    ("fooo", _ => Some(Foo2)),
+    ("foo", _ => Some(Foo)),
+    ("bar", _ => Some(Bar)),
+    (" +", _ => Some(Whitespace)),
+    (".", _ => Some(Any)),
   ];
 
+  let tests = [
+    ("foo bar", Ok([Foo, Whitespace, Bar])),
+    ("foo  bar", Ok([Foo, Whitespace, Bar])),
+    ("foo  #bar", Ok([Foo, Whitespace, Any, Bar])),
+  ];
+
+  let resultToString = {
+    open ToString;
+    let toks = list(token_pp);
+    result(toks, pair(string, toks));
+  };
+
   let run = (~verbose=false, ()) => {
-    switch (go(lexer, "foo  @bar")) {
-    | Ok(l) =>
-      let r = lex_pp(l);
-      if (verbose) {
-        print_endline(r);
-      };
-      assertEq(r, "foo,ws,any,bar");
-    | Error((e, l)) =>
-      fail(~err=": " ++ e ++ " (but got [" ++ lex_pp(l) ++ "])", ())
-    };
+    tests
+    |> List.iter(((testStr, expected)) => {
+         let res = go(lexer, testStr);
+         if (verbose) {
+           print(resultToString, res);
+         };
+         assertEq(res, expected, resultToString);
+       });
   };
 };
