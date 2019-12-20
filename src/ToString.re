@@ -5,6 +5,7 @@ let contramap = (fatob, btostring, a) => {
 };
 
 let int = string_of_int;
+let bool = string_of_bool;
 let string = s => s;
 let pair = (fa, fb, (a, b)) => "(" ++ fa(a) ++ ", " ++ fb(b) ++ ")";
 let list = (f, l) => "[" ++ String.concat(", ", List.map(f, l)) ++ "]";

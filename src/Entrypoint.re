@@ -1,4 +1,5 @@
 open Common;
+open! Util;
 
 type evalResult =
   | URes // unit
@@ -21,6 +22,7 @@ let rec eval = (ctx, s) =>
   switch (s) {
   | Bool(b) => BRes(b)
   | Int(i) => IRes(i)
+  | String(_) => IRes(-1) // TODO: fix
   | Annot(s, _) => eval(ctx, s)
   | Unit => URes
   | Var(v) =>

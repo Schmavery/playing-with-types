@@ -2,6 +2,7 @@ open! Util;
 
 module Stream = {
   type t('a) = list('a);
+  /* type t = {text: string, pos: int}; */
   /* let get = l => */
   /*   switch (l) { */
   /*   | [] => Error("End of stream") */
@@ -11,6 +12,14 @@ module Stream = {
 
 type parseResult('a, 's) = result(('a, Stream.t('s)), string);
 type parser('a, 's) = Stream.t('s) => parseResult('a, 's);
+
+/* let pattern = (pattern) => { */
+/*   let re = compile(Re.Pcre.re(pattern)); */
+/*   (stream) => { */
+/*     exec_opt() */
+/*   }; */
+/* }; */
+
 
 let first =
     (parsers: list(parser('a, 's)), stream: Stream.t('s))
@@ -54,6 +63,7 @@ let one = (fn, stream) =>
   | [] => Error("End of stream")
   | [tok, ...rest] => fn(tok) |> Result.map(v => (v, rest))
   };
+
 
 // bind?
 let (|>>) = (parser, f, stream): parseResult(_, _) => {

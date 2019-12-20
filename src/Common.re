@@ -1,3 +1,18 @@
+type token =
+  | TrueL
+  | FalseL
+  | LParenL
+  | RParenL
+  | LBracketL
+  | RBracketL
+  | CommaL
+  | ColonL
+  | FunL
+  | ArrowL
+  | IntL(int)
+  | IdentL(string)
+  | StringL(string);
+
 type typ =
   | BoolT
   | IntT
@@ -9,6 +24,7 @@ type syntax =
   | Unit
   | Bool(bool)
   | Int(int)
+  | String(string)
   | Var(string)
   | EmptyList
   | Cons(syntax, syntax)
@@ -17,8 +33,6 @@ type syntax =
   | Fn(list((string, option(typ))), syntax)
   | Annot(syntax, typ)
   | LetIn(string, syntax, syntax);
-
-module StringMap = Map.Make(String);
 
 module Stringify = {
   let sp = Printf.sprintf;
@@ -40,6 +54,7 @@ module Stringify = {
     | Bool(b) => b ? "true" : "false"
     | Int(i) => string_of_int(i)
     | Var(s) => s
+    | String(s) => "\"" ++ s ++ "\""
     | Cons(hd, tl) => sp("(%s :: %s)", syntax(hd), syntax(tl))
     | If(cond, fst, snd) =>
       sp(
@@ -75,6 +90,3 @@ module Stringify = {
     };
   };
 };
-
-module Result = Belt.Result;
-type result('a, 'b) = Result.t('a, 'b) = | Ok('a) | Error('b);

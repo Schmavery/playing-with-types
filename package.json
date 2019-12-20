@@ -4,7 +4,8 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "build": "bsb -make-world -backend native",
+    "build": "bsb -backend native",
+    "build:world": "bsb -make-world -backend native",
     "start": "./lib/bs/native/test.native",
     "clean": "bsb -clean-world -backend native"
   },

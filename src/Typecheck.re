@@ -1,4 +1,5 @@
 open Common;
+open! Util;
 
 let rec synth = (ctx, s) =>
   switch (s) {
@@ -52,7 +53,7 @@ let rec synth = (ctx, s) =>
         argList,
         fnArgTList,
       )
-      ->Result.flatMap(() => Ok(t2))
+      ->Result.bind(() => Ok(t2))
     | Ok(t) =>
       Error(
         "Tried to call `" ++ Stringify.typ(t) ++ "`, which isn't a function.",
@@ -80,7 +81,7 @@ let rec synth = (ctx, s) =>
       );
     switch (res) {
     | Ok((ctx, typeList)) =>
-      synth(ctx, body)->Result.flatMap(t => Ok(FnT(typeList, t)))
+      synth(ctx, body)->Result.bind(t => Ok(FnT(typeList, t)))
     | Error(_) as e => e
     };
   | Cons(hd, tl) =>
@@ -117,8 +118,8 @@ and checkType = (ctx, s, t) =>
     }
   | If(cond, fst, snd) =>
     checkType(ctx, cond, BoolT)
-    ->Result.flatMap(_ => checkType(ctx, fst, t))
-    ->Result.flatMap(_ => checkType(ctx, snd, t))
+    ->Result.bind(_ => checkType(ctx, fst, t))
+    ->Result.bind(_ => checkType(ctx, snd, t))
   // TODO check that arg type is correct
   | Fn(argList, body) =>
     switch (t) {
@@ -145,7 +146,7 @@ and checkType = (ctx, s, t) =>
         argTList,
         Ok(ctx),
       )
-      ->Result.flatMap(ctxWithArgs => checkType(ctxWithArgs, body, returnT))
+      ->Result.bind(ctxWithArgs => checkType(ctxWithArgs, body, returnT))
     | actualT =>
       Error(
         "Fn did not match non-function type of `"
@@ -162,7 +163,7 @@ and checkType = (ctx, s, t) =>
     switch (t) {
     | ListT(listT) =>
       checkType(ctx, hd, listT)
-      ->Result.flatMap(_ => checkType(ctx, tl, ListT(listT)))
+      ->Result.bind(_ => checkType(ctx, tl, ListT(listT)))
     | _ =>
       Error(Stringify.syntax(s) ++ " is a list, not a " ++ Stringify.typ(t))
     }

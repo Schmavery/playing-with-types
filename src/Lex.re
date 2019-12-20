@@ -1,4 +1,4 @@
-open Util;
+open! Util;
 
 type assoc('a, 'b) = list(('a, 'b));
 type handler('a) = array(string) => 'a;

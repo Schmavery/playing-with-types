@@ -1,4 +1,5 @@
 type result('a, 'b) = Result.t('a, 'b) = | Ok('a) | Error('b);
+module StringMap = Map.Make(String);
 
 module List = {
   include List;
