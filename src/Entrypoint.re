@@ -5,6 +5,7 @@ type evalResult =
   | URes // unit
   | LRes(list(evalResult)) // list
   | IRes(int) // int
+  | SRes(string) // string
   | FRes((StringMap.t(evalResult), list(evalResult)) => evalResult) // func
   | BRes(bool); // bool
 
@@ -13,6 +14,7 @@ let rec evalToString = r =>
   | URes => "()"
   | IRes(i) => string_of_int(i)
   | BRes(b) => string_of_bool(b)
+  | SRes(s) => "\"" ++ s ++ "\""
   | FRes(_) => "<function>"
   | LRes(l) => "[" ++ String.concat(", ", List.map(evalToString, l)) ++ "]"
   };
@@ -22,7 +24,7 @@ let rec eval = (ctx, s) =>
   switch (s) {
   | Bool(b) => BRes(b)
   | Int(i) => IRes(i)
-  | String(_) => IRes(-1) // TODO: fix
+  | String(s) => SRes(s)
   | Annot(s, _) => eval(ctx, s)
   | Unit => URes
   | Var(v) =>

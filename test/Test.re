@@ -11,13 +11,16 @@ let lexer = [
   ("true", _ => Some(TrueL)),
   ("false", _ => Some(FalseL)),
   ("fun", _ => Some(FunL)),
+  ("let", _ => Some(LetL)),
+  ("=", _ => Some(EqL)),
   (",", _ => Some(CommaL)),
   (":", _ => Some(ColonL)),
-  ("->", _ => Some(ArrowL)),
+  (";", _ => Some(SemicolonL)),
+  ("=>", _ => Some(ArrowL)),
   ("[0-9]+", arr => Some(IntL(int_of_string(arr[0])))),
-  ("[a-z][a-zA-Z0-9]*", arr => Some(IdentL(arr[0]))),
+  ("[a-z_][a-zA-Z0-9_]*", arr => Some(IdentL(arr[0]))),
   ("\"([^\"]*)\"", arr => Some(StringL(arr[1]))),
-  (" +", _ => None),
+  ("\\s", _ => None),
 ];
 
 let (tokenToString, resultToString) = {
@@ -32,7 +35,10 @@ let (tokenToString, resultToString) = {
     | RBracketL => "RBracket"
     | CommaL => "Comma"
     | ColonL => "Colon"
+    | SemicolonL => "Semicolon"
     | FunL => "Fun"
+    | LetL => "Let"
+    | EqL => "Eq"
     | ArrowL => "Arrow"
     | IntL(n) => "Int(" ++ int(n) ++ ")"
     | IdentL(s) => "Ident(" ++ s ++ ")"
@@ -79,12 +85,13 @@ let error = (s, t) => {
 };
 
 let parser = {
-  open Parse;
+  open! Parse;
 
   let simple = toMatch =>
     one(nextToken =>
       nextToken == toMatch ? Ok() : error(tokenToString(toMatch), nextToken)
     );
+  let name = (a, b, c) => trace(tokenToString, a, b, c);
 
   let lparen = simple(LParenL);
   let rparen = simple(RParenL);
@@ -100,11 +107,20 @@ let parser = {
   let parenWrap = parser =>
     lparen *>> join(parser, rparen) ==> (((a, _)) => a);
 
+  let bracketWrap = parser =>
+    lbracket *>> join(parser, rbracket) ==> (((a, _)) => a);
+
   let str =
     one(
       fun
       | StringL(s) => Ok(String(s))
       | t => error("String", t),
+    );
+  let int =
+    one(
+      fun
+      | IntL(s) => Ok(Int(s))
+      | t => error("Int", t),
     );
   let ident =
     one(
@@ -113,49 +129,120 @@ let parser = {
       | t => error("Ident", t),
     );
 
-  let emptyList = join(lbracket, rbracket) ==> (_ => EmptyList);
+  let identStr =
+    one(
+      fun
+      | IdentL(s) => Ok(s)
+      | t => error("Ident", t),
+    );
+
   let unit = join(lparen, rparen) ==> (_ => Unit);
-  let bool = first([true_, false_]);
+  let bool = name("bool", first([true_, false_]));
 
-  /* let typIdent = */
-  /*   one( */
+  /*   let varToString = */
   /*     fun */
-  /*     | IdentL("bool") => Ok(BoolT) */
-  /*     | IdentL("int") => Ok(IntT) */
-  /*     | IdentL("unit") => Ok(UnitT) */
-  /*     | t => error("Ident", t), */
-  /*   ); */
-  /* let rec typ = () => first([typIdent, typList, arrowTyp()]) */
-  /* and typList = */
-  /*   simple(IdentL("list")) *>> parenWrap(typIdent) ==> (t => ListT(t)) */
-  /* and commaTypList = () => list(~sep=comma, typ()) */
-  /* and arrowTyp = () => */
-  /*   join(commaTypList(), typ()) ==> (((fst, snd)) => FnT(fst, snd)); */
+  /*     | Var(v) => v */
+  /*     | _ => failwith("expected var"); */
 
-  let rec commaExprList = () => list(~sep=comma, expr())
-  /* and annot = () => */
-  /*   parenWrap(join(expr(), colon *>> typ())) */
-  /*   ==> (((e, t)) => Annot(e, t)) */
-  and fn = () => {
-    let args = fun_ *>> parenWrap(list(~sep=comma, ident));
-    let body = arrow *>> expr();
-    let mapArgs = List.map((Var(s)) => (s, None));
-    join(args, body) ==> (((a, b)) => Fn(mapArgs(a), b));
+  let typIdent =
+    one(
+      fun
+      | IdentL("bool") => Ok(BoolT)
+      | IdentL("int") => Ok(IntT)
+      | IdentL("string") => Ok(StringT)
+      | IdentL("unit") => Ok(UnitT)
+      | t => error("Ident(*)", t),
+    );
+  let rec typ = s => name("type", first([typIdent, typList, arrowTyp]), s)
+  and typList =
+    simple(IdentL("list")) *>> parenWrap(typIdent) ==> (t => ListT(t))
+  and typArgs = s => parenWrap(list(~sep=comma, typ), s)
+  and arrowTyp = s => {
+    (
+      join(typArgs, simple(ArrowL) *>> typ)
+      ==> (((fst, snd)) => FnT(fst, snd))
+    )(
+      s,
+    );
+  };
+
+  let rec commaExprList = s => list(~sep=comma, expr, s)
+  and annot = s =>
+    (join(expr_no_annot, colon *>> typ) ==> (((e, t)) => Annot(e, t)))(s)
+  and listLit = s =>
+    bracketWrap(
+      list(~sep=comma, expr)
+      ==> (l => List.fold_right((v, a) => Cons(v, a), l, EmptyList)),
+      s,
+    )
+  and fn = s => {
+    let args =
+      fun_
+      *>> first([
+            parenWrap(list(~sep=comma, identStr)),
+            identStr ==> (s => [s]),
+          ]);
+    let body = arrow *>> expr;
+    let mapArgs = List.map(var => (var, None));
+    let p = args <*> body ==> (((a, b)) => Fn(mapArgs(a), b));
+    p(s);
   }
-  and apply = () =>
-    ident |>> (i => parenWrap(commaExprList()) ==> (l => App(i, l)))
-  and expr = () => first([apply(), fn(), str, ident, emptyList, bool, unit]);
+  and apply = s =>
+    (ident |>> (i => parenWrap(commaExprList) ==> (l => App(i, l))))(s)
+  and letin = s => {
+    (
+      fst(join(simple(LetL) *>> identStr, simple(EqL)))
+      |>> (
+        var => {
+          let v = fst(join(expr, simple(SemicolonL)));
+          join(v, expr) ==> (((v, rest)) => LetIn(var, v, rest));
+        }
+      )
+    )(
+      s,
+    );
+  }
+  and expr_no_annot = s => {
+    first(
+      [
+        letin,
+        apply,
+        fn,
+        str,
+        ident,
+        listLit,
+        bool,
+        int,
+        unit,
+        parenWrap(expr),
+      ],
+      s,
+    );
+  }
+  and expr = s => name("expr", first([annot, expr_no_annot]), s);
 
-  expr();
+  expr;
 };
 
-let example = {|foo("bar", "", foo("", []))|};
+/* let example = {|foo("bar", fun (a) -> 1, "aas" : string, foo2("", []))|}; */
+/* let example = {|(fun (a) -> 1)(1)|}; */
+let example = {|
+   let empty = ((fun a => a("")) : ((string) => string) => string);
+   let a = empty(fun _ => "");
+   print_int(1)
+   |};
+
+let stdlib =
+  StringMap.empty |> StringMap.add("print_int", FnT([IntT], UnitT));
 
 let res =
   switch (Lex.go(lexer, example)) {
   | Ok(stream) =>
     switch (parser(stream)) {
-    | Ok((ast, _)) => astToString(ast)
+    | Ok((ast, _)) =>
+      let t = Typecheck.synth(stdlib, ast);
+      let typ = ToString.(result(Stringify.typ, string));
+      astToString(ast) ++ "\ntype: " ++ typ(t);
     | Error(e) => e
     }
   | Error(_) as e => resultToString(e)

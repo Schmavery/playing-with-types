@@ -32,3 +32,10 @@ module Result = {
 };
 
 let print = (s, v) => print_endline(s(v));
+
+let traceWrap = (s, v) => {
+  print_endline("Start " ++ s);
+  let a = v();
+  print_endline("End " ++ s);
+  a;
+};

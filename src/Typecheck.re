@@ -6,6 +6,7 @@ let rec synth = (ctx, s) =>
   | Unit => Ok(UnitT)
   | Bool(_) => Ok(BoolT)
   | Int(_) => Ok(IntT)
+  | String(_) => Ok(StringT)
   | Var(s) =>
     switch (StringMap.find(s, ctx)) {
     | t => Ok(t)
@@ -100,6 +101,7 @@ and checkType = (ctx, s, t) =>
   | Unit
   | Bool(_)
   | Int(_)
+  | String(_)
   | App(_, _)
   | Var(_)
   | LetIn(_, _, _)

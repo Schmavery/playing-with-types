@@ -32,7 +32,7 @@ fd-slicer@~1.1.0:
 
 ocaml-re@Schmavery/shim#ocaml-re:
   version "0.1.1"
-  resolved "https://codeload.github.com/Schmavery/shim/tar.gz/453f0563be3a43c648c3840be3fc474801d4026e"
+  resolved "https://codeload.github.com/Schmavery/shim/tar.gz/4e8b4615c3c3e8565ec3c552d609b74b51cba886"
   dependencies:
     bsc-stdlib-polyfill Schmavery/bsc-stdlib-polyfill#4.02.3
     shim Schmavery/shim

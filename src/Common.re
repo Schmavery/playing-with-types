@@ -7,7 +7,10 @@ type token =
   | RBracketL
   | CommaL
   | ColonL
+  | SemicolonL
   | FunL
+  | LetL
+  | EqL
   | ArrowL
   | IntL(int)
   | IdentL(string)
@@ -16,6 +19,7 @@ type token =
 type typ =
   | BoolT
   | IntT
+  | StringT
   | UnitT
   | ListT(typ)
   | FnT(list(typ), typ);
@@ -40,6 +44,7 @@ module Stringify = {
     switch (t) {
     | BoolT => "bool"
     | IntT => "int"
+    | StringT => "string"
     | UnitT => "unit"
     | ListT(t) => sp("list(%s)", typ(t))
     | FnT(t1s, t2) =>

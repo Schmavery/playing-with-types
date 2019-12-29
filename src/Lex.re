@@ -4,15 +4,21 @@ type assoc('a, 'b) = list(('a, 'b));
 type handler('a) = array(string) => 'a;
 type t('a) = assoc(Re.Core.t, handler('a));
 
+let compileRe = re =>
+  switch (Re.Core.compile(Re.Pcre.re(re, ~flags=[`MULTILINE, `ANCHORED]))) {
+  | v => v
+  | exception Re.Perl.Parse_error => failwith("error compiling " ++ re)
+  };
+
 let lex_one = (t, s, pos) => {
   open Re.Core;
   let options =
     t
-    |> List.map(((re, fn)) => (compile(Re.Pcre.re(re)), fn))
+    |> List.map(((re, fn)) => (compileRe(re), fn))
     |> List.filter_map(((re, fn)) =>
          exec_opt(~pos, re, s) |> Option.map(re => (re, fn))
        )
-    |> List.filter(((re, _)) => fst(Group.offset(re, 0)) == pos)
+    /* |> List.filter(((re, _)) => fst(Group.offset(re, 0)) == pos) */
     |> List.stable_sort(((a, _), (b, _)) => {
          let adiff = Group.stop(a, 0) - Group.start(a, 0);
          let bdiff = Group.stop(b, 0) - Group.start(b, 0);

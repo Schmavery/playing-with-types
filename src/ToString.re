@@ -4,6 +4,7 @@ let contramap = (fatob, btostring, a) => {
   btostring(fatob(a));
 };
 
+let ignore = _ => "_";
 let int = string_of_int;
 let bool = string_of_bool;
 let string = s => s;

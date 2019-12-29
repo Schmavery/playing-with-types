@@ -1,4 +1,5 @@
 open! Util;
+let verbose = true;
 
 module Stream = {
   type t('a) = list('a);
@@ -20,13 +21,12 @@ type parser('a, 's) = Stream.t('s) => parseResult('a, 's);
 /*   }; */
 /* }; */
 
-
 let first =
     (parsers: list(parser('a, 's)), stream: Stream.t('s))
     : parseResult('a, 's) => {
   let rec inner = parsers =>
     switch (parsers) {
-    | [] => Error("No matching parsers for stream")
+    | [] => Error("No matching parsers")
     | [p, ...rest] => Result.bind_error(p(stream), _ => inner(rest))
     };
   inner(parsers);
@@ -42,6 +42,28 @@ let join = (parserA, parserB, stream) => {
   | Error(_) as e => e
   };
 };
+
+let trace = (tokenPrinter, name, parser, stream) => {
+  verbose ? print_endline("Starting to parse `" ++ name ++ "`") : ();
+  let r = parser(stream);
+  if (verbose) {
+    switch (r) {
+    | Ok((_, _)) => print_endline("Finished parsing `" ++ name ++ "`")
+    | Error(e) =>
+      let next =
+        switch (stream) {
+        | [t, ..._] => tokenPrinter(t)
+        | [] => "EOF"
+        };
+      print_endline(
+        "Error parsing `" ++ name ++ "` (next token `" ++ next ++ "`): " ++ e,
+      );
+    };
+  };
+  r;
+};
+
+let (<*>) = join;
 
 let list = (~sep=?, parser, stream) => {
   let rec inner = (stream, acc) =>
@@ -64,7 +86,6 @@ let one = (fn, stream) =>
   | [tok, ...rest] => fn(tok) |> Result.map(v => (v, rest))
   };
 
-
 // bind?
 let (|>>) = (parser, f, stream): parseResult(_, _) => {
   switch (parser(stream)) {
@@ -83,8 +104,16 @@ let ( *>> ) = (parser1, parser2, stream): parseResult(_, _) => {
   };
 };
 
-let map = (parser, f, stream) => {
+let map = (parser, f, stream): parseResult(_, _) => {
   parser(stream) |> Result.map(((a, stream)) => (f(a), stream));
 };
 
-let (==>) = map;
+let (==>) = (a, b): parser(_, _) => map(a, b);
+
+let fst = p => {
+  p ==> (((a, _)) => a);
+};
+
+let snd = p => {
+  p ==> (((_, b)) => b);
+};
