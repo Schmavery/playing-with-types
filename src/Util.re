@@ -4,6 +4,16 @@ module StringMap = Map.Make(String);
 module List = {
   include List;
 
+  let rec find_opt = p =>
+    fun
+    | [] => None
+    | [x, ...l] =>
+      if (p(x)) {
+        Some(x);
+      } else {
+        find_opt(p, l);
+      };
+
   let filter_map = f => {
     let rec aux = accu =>
       fun

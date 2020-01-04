@@ -1,5 +1,6 @@
 open! Util;
-let verbose = true;
+/* let verbose = true; */
+let verbose = false;
 
 module Stream = {
   type t('a) = list('a);

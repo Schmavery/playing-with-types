@@ -52,32 +52,6 @@ let (tokenToString, resultToString) = {
 let example = {|foo(bar, true, baz(12, false), "abc123")|};
 print(resultToString, Lex.go(lexer, example));
 
-/* type ast = */
-/*   | Unit */
-/*   | Bool(bool) */
-/*   | Int(int) */
-/*   | Var(string) */
-/*   | EmptyList */
-/*   | App(ast, list(ast)) */
-/*   | String(string); */
-
-/* let astToString = { */
-/*   open ToString; */
-/*   let parenList = (f, l) => */
-/*     "(" ++ String.concat(", ", List.map(f, l)) ++ ")"; */
-/*   let rec ast = t => */
-/*     switch (t) { */
-/*     | Int(n) => int(n) */
-/*     | Bool(b) => bool(b) */
-/*     | EmptyList => "[]" */
-/*     | Unit => "()" */
-/*     | Var(s) => s */
-/*     | Annot(s) => s */
-/*     | String(s) => "\"" ++ s ++ "\"" */
-/*     | App(f, l) => ast(f) ++ parenList(ast, l) */
-/*     }; */
-/*   ast; */
-/* }; */
 let astToString = Common.Stringify.syntax;
 
 let error = (s, t) => {

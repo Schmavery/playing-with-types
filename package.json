@@ -6,7 +6,9 @@
   "scripts": {
     "build": "bsb -backend native",
     "build:world": "bsb -make-world -backend native",
-    "start": "./lib/bs/native/test.native",
+    "start:1": "./lib/bs/native/test.native",
+    "start:2": "./lib/bs/native/test2.native",
+    "start:asp": "./lib/bs/native/testAsp.native",
     "clean": "bsb -clean-world -backend native"
   },
   "dependencies": {

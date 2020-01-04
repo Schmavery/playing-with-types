@@ -25,5 +25,11 @@
   "entries": [{
      "backend": "native",
      "main-module": "Test"
-  }]
+    }, {
+     "backend": "native",
+     "main-module": "Test2"
+    }, {
+     "backend": "native",
+     "main-module": "TestAsp"
+  } ]
 }
